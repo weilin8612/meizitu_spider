@@ -1,80 +1,197 @@
-import requests
-from user_agents import my_user_agent
-from lxml import etree
+#!/usr/bin/python
+# coding=utf-8
+
 import os
+import sys
+
+p = os.path.dirname(os.path.dirname((os.path.abspath(__file__))))
+if p not in sys.path:
+    sys.path.append(p)
+
+import requests
+from meizitu_spider.user_agents import my_user_agent
+from lxml import etree
+
+from meizitu_spider.configure import BASE_URL, BEGIN_PAGE, AFTER_PAGE, SAVE_PATH, SLEEP, LASTE_PAGE
 from time import sleep
+from random import randint
+
+
+# BASE_URL = 'https://www.mzitu.com/xinggan/page/'
+# BEGIN_PAGE = 0
+# AFTER_PAGE = 3
+# SAVE_PATH = '.'
+
 
 def headers():
     return {
-                # ':authority': 'www.mzitu.com',
-                # ':method': 'GET',
-                # ':scheme': 'https',
-                # 'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3',
-                # 'accept-encoding': 'gzip, deflate, br',
-                # 'accept-language': 'zh-CN,zh;q=0.9',
-                # 'cache-control': 'max-age=0',
-                # 'cookie': 'Hm_lvt_dbc355aef238b6c32b43eacbbf161c3c=1559132511,1559184202,1559295524,1560026651; Hm_lpvt_dbc355aef238b6c32b43eacbbf161c3c=1560027027',
-                # 'if-modified-since': 'Sat, 08 Jun 2019 20:50:26 GMT',
-                'Referer': 'https://www.mzitu.com/xinggan/',
-                'User-Agent': my_user_agent()
-        }
-base_url = 'https://www.mzitu.com/xinggan/page/'
+        # 'authority': 'www.mzitu.com',
+        # ':method': 'GET',
+        # ':scheme': 'https',
+        # 'accept': 'ext/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
+        # 'accept-encoding': 'gzip, deflate, br',
+        # 'accept-language': 'zh-CN,zh;q=0.9',
+        # 'cache-control': 'max-age=0',
+        # 'cookie': 'Hm_lvt_dbc355aef238b6c32b43eacbbf161c3c=1579806566,1579822432; Hm_lpvt_dbc355aef238b6c32b43eacbbf161c3c=1579826804',
+        # 'if-modified-since': 'Thu, 23 Jan 2020 15:22:35 GMT',
+        # 'sec-fetch-mode': 'navigate',
+        # 'sec-fetch-site': 'same-origin',
+        # 'sec-fetch-user': '\?1',
+        # 'upgrade-insecure-requests': '1',
+        'Referer': 'https://www.mzitu.com/xinggan/',
+        'user-agent': 'Mozilla / 5.0(X11;Linuxx86_64) AppleWebKit / 537.36(KHTML, likeGecko) Chrome / 79.0.3945.130Safari / 537.36'
+    }
 
-def down_load(page, num=10000):
-    """
 
-    :param page: 爬下来多少页
-    :param num: 每个美女下载多少张图
-    :return:
-    """
-    #妹子图网址
-    base_url = 'https://www.mzitu.com/xinggan/page/'
-    #网站每一页的url
-    urls = [base_url + str(i+1) for i in range(page)]
-    for url in urls:
-        #每一个妹子有单独的url目录,组成一个列表
-        mz_urls = []
+def Fheaders():
+    return {
+        'authority': 'i5.mmzztt.com',
+        'method': 'GET',
+        'scheme': 'https',
+        'accept': 'image / webp, image / apng, image / *, * / *;q = 0.8',
+        'accept-encoding': "gzip, deflate, br",
+        'accept-language': 'zh-CN,zh;q=0.9',
+        'Referer': 'https: // www.mzitu.com/203554/3',
+        'sec-fetch-mode': 'no - cors',
+        'sec-fetch-site': 'cross - site',
+        'user-agent': 'Mozilla / 5.0(X11;Linuxx86_64) AppleWebKit / 537.36(KHTML, likeGecko) Chrome / 79.0.3945.130Safari / 537.36'
+    }
 
-        res = requests.get(url, headers=headers())
+
+def consist_everybaby_urls():
+    page_urls = [BASE_URL + str(i + 1) for i in range(BEGIN_PAGE, AFTER_PAGE)]
+
+    # 每个baby的主页列表
+    baby_urls = []
+    for url in page_urls:
+
+        # 每个baby的主页列表
+        header = headers()
+        # if BEGIN_PAGE != 1 or BEGIN_PAGE != 2:
+        #     header['Referer'] = 'https://www.mzitu.com/xinggan/page/{0}'.format(BEGIN_PAGE-1)
+        res = requests.get(url, headers=header)
+        print(res)
         html = etree.HTML(res.text)
         lis = html.xpath('//ul[@id="pins"]/li')
         for li in lis:
             ele_url = li.xpath('./a/@href')
-            mz_urls.append(ele_url[0])
-        #已经获取每个女孩的主页mz_url
-        for mz_url in mz_urls:
-            #mz_url每一个图的url
-            #meizi_urls = [mz_url + '/' + str(j + 1) for j in range(20)]
-            res = requests.get(mz_url, headers=headers())
-            html = etree.HTML(res.text)
-            max = html.xpath('//div/a[last()-1]/span/text()')
-            # sleep(1)
-            if max:
-                max = int(max[0])
-                name = html.xpath('//div[@class="main-image"]/p/a/img/@alt')
-                if num > max:
-                    meizi_urls = [mz_url + '/' + str(j+1) for j in range(max)]
-                else:
-                    meizi_urls = [mz_url + '/' + str(j + 1) for j in range(num)]
-                if os.path.exists(name[0]):
-                    continue
-                else:
-                    os.mkdir(name[0])
-
-            for meizi_url in meizi_urls:
-                print(meizi_url)
-                res = requests.get(meizi_url, headers=headers())
-                html = etree.HTML(res.text)
-                src = html.xpath('//div[@class="main-image"]/p/a/img/@src')
-                # sleep(1)
-                print(src)
-                res = requests.get(src[0], headers=headers())
-                wp = meizi_url.split('/')
-                with open('./{0}/{1}.jpg'.format(name[0], wp[-1]), 'wb') as f:
-                    f.write(res.content)
+            baby_urls.append(ele_url[0])
+    return baby_urls
 
 
+def get_onebaby_name_pagemax(baby_url):
+    res = requests.get(baby_url, headers=headers())
+    html = etree.HTML(res.text)
+
+    # 从baby专辑主页获取最大页数
+    maxpage = html.xpath('//div/a[last()-1]/span/text()')
+
+    # 提取baby专辑名
+    name = html.xpath('//div[@class="main-image"]/p/a/img/@alt')
+    # print(name)
+    # 处理空相应造成的name 空列表的异常
+    try:
+        name = clean_dirname(name[0])
+        name = SAVE_PATH + '/' + name
+        maxpage = int(maxpage[0])
+    except IndexError:
+        sleep(1.5 * SLEEP)
+        (name, maxpage) = get_onebaby_name_pagemax(baby_url)
+
+    return (name, maxpage)
+
+
+def clean_dirname(dirname):
+    table = str.maketrans("/ ,.\b\t\\\'\"？", "xxxxxxxxxx")
+    result = dirname.translate(table)
+    return result
+
+
+# def download_picture(babymainurl, name):
+#
+# src = get_onebady_every_picture_url(babymainurl)
+#
+#     res = requests.get(src, headers=headers())
+#
+#     #提取网址最后一个字段如 0, 1, 2 作为图片名,并下载保存图片
+#     wp = babymainurl.split('/')[-1]
+#     print("wp is" + wp)
+#     with open('{0}/{1}/{2}'.format(SAVE_PATH, name, wp[-1] + '.jpg'), 'wb') as f:
+#         f.write(res.content)
+
+
+def download_picture(babymainurl, name, src, header):
+    # src = get_onebady_every_picture_url(babymainurl)
+
+    res = requests.get(src, headers=header)
+
+    # 提取网址最后一个字段如 0, 1, 2 作为图片名,并下载保存图片
+    wp = babymainurl.split('/')[-1]
+    print("正在下载第 {0} 张图片".format(wp))
+    with open('{0}/{1}'.format(name, wp + '.jpg'), 'wb') as f:
+        f.write(res.content)
+
+
+def get_onebady_every_picture_url(babymainurl, header):
+    res = requests.get(babymainurl, headers=header)
+    html = etree.HTML(res.text)
+    # 提取专辑中所有图片的高清原url
+    src = html.xpath('//div[@class="main-image"]/p/a/img/@src')
+    try:
+        src = src[0]
+    except IndexError:
+        sleep(1.5 * SLEEP)
+        src = get_onebady_every_picture_url(babymainurl, header)
+
+    return src
+
+
+def start_run():
+    i = 0
+    baby_urls = consist_everybaby_urls()
+    print("构建baby专辑主页列表成功")
+    for baby_url in baby_urls:
+        print(baby_url)
+
+        (name, maxpage) = get_onebaby_name_pagemax(baby_url)
+        print("将要下载专辑为{0},最大页数为{1}".format(name, maxpage))
+        sleep(0.1 * SLEEP)
+
+        # 每个bady专辑的每张图片的url组成了一个列表
+        onebady_all_picture = [baby_url + "/" + str(i + 1) for i in range(maxpage)]
+        print("构建专辑每张图片url列表成功，数量是{0}".format(len(onebady_all_picture)))
+
+        # 为没张专辑建立目录
+        if os.path.exists(name):
+            print("已经有此专辑,进行下一张下载")
+            continue
+        else:
+            os.mkdir(name)
+            print("建立目录成功")
+
+        # 下载图片
+        referer_headers = baby_url
+        for onepicture in onebady_all_picture:
+            # 找出专辑当前页在headers中的referer,并找出图片源地址
+            add_header = Fheaders()
+            add_header['Referer'] = referer_headers
+            src = get_onebady_every_picture_url(onepicture, add_header)
+
+            # 找出当前图片在herders中的referer,并下载图片
+            add_header['Referer'] = onepicture
+            download_picture(onepicture, name, src, add_header)
+            sleep(randint(1, 3) * SLEEP / 30)
+        i += 1
+        print("已经下载完第 {0} 张专辑, baby是 {1} 的专辑图片".format(i, name))
+
+
+# print(randint(1, 10))
 
 
 if __name__ == "__main__":
-    down_load(3,100)
+    while AFTER_PAGE < LASTE_PAGE:
+        print("第{0}页专辑下载开始".format(AFTER_PAGE))
+        start_run()
+        print("第{0}页专辑下载完成".format(AFTER_PAGE))
+        BEGIN_PAGE += 1
+        AFTER_PAGE += 1
