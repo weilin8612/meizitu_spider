@@ -3,6 +3,7 @@
 
 import os
 import sys
+import logging
 
 p = os.path.dirname(os.path.dirname((os.path.abspath(__file__))))
 if p not in sys.path:
@@ -17,10 +18,7 @@ from time import sleep
 from random import randint
 
 
-# BASE_URL = 'https://www.mzitu.com/xinggan/page/'
-# BEGIN_PAGE = 0
-# AFTER_PAGE = 3
-# SAVE_PATH = '.'
+
 
 
 def headers():
@@ -70,7 +68,7 @@ def consist_everybaby_urls():
         # if BEGIN_PAGE != 1 or BEGIN_PAGE != 2:
         #     header['Referer'] = 'https://www.mzitu.com/xinggan/page/{0}'.format(BEGIN_PAGE-1)
         res = requests.get(url, headers=header)
-        print(res)
+        # print(res)
         html = etree.HTML(res.text)
         lis = html.xpath('//ul[@id="pins"]/li')
         for li in lis:
@@ -95,6 +93,7 @@ def get_onebaby_name_pagemax(baby_url):
         name = SAVE_PATH + '/' + name
         maxpage = int(maxpage[0])
     except IndexError:
+        logging.warning("获取页面失败，sleep后继续请求")
         sleep(1.5 * SLEEP)
         (name, maxpage) = get_onebaby_name_pagemax(baby_url)
 
@@ -127,7 +126,8 @@ def download_picture(babymainurl, name, src, header):
 
     # 提取网址最后一个字段如 0, 1, 2 作为图片名,并下载保存图片
     wp = babymainurl.split('/')[-1]
-    print("正在下载第 {0} 张图片".format(wp))
+    logging.info("正在下载第 {0} 张图片".format(wp))
+    # print("正在下载第 {0} 张图片".format(wp))
     with open('{0}/{1}'.format(name, wp + '.jpg'), 'wb') as f:
         f.write(res.content)
 
@@ -140,6 +140,7 @@ def get_onebady_every_picture_url(babymainurl, header):
     try:
         src = src[0]
     except IndexError:
+        logging.warning("获取html失败，sleep后继续请求")
         sleep(1.5 * SLEEP)
         src = get_onebady_every_picture_url(babymainurl, header)
 
@@ -149,25 +150,30 @@ def get_onebady_every_picture_url(babymainurl, header):
 def start_run():
     i = 0
     baby_urls = consist_everybaby_urls()
-    print("构建baby专辑主页列表成功")
+    logging.info("构建baby专辑主页列表成功")
+    # print("构建baby专辑主页列表成功")
     for baby_url in baby_urls:
-        print(baby_url)
-
+        # print(baby_url)
+        logging.info(baby_url)
         (name, maxpage) = get_onebaby_name_pagemax(baby_url)
-        print("将要下载专辑为{0},最大页数为{1}".format(name, maxpage))
+        logging.info("将要下载专辑为{0},最大页数为{1}".format(name, maxpage))
+        # print("将要下载专辑为{0},最大页数为{1}".format(name, maxpage))
         sleep(0.1 * SLEEP)
 
         # 每个bady专辑的每张图片的url组成了一个列表
         onebady_all_picture = [baby_url + "/" + str(i + 1) for i in range(maxpage)]
-        print("构建专辑每张图片url列表成功，数量是{0}".format(len(onebady_all_picture)))
+        # print("构建专辑每张图片url列表成功，数量是{0}".format(len(onebady_all_picture)))
+        logging.info("构建专辑每张图片url列表成功，数量是{0}".format(len(onebady_all_picture)))
 
         # 为没张专辑建立目录
         if os.path.exists(name):
-            print("已经有此专辑,进行下一张下载")
+            # print("已经有此专辑,进行下一张下载")
+            logging.info("已经有此专辑,进行下一张下载")
             continue
         else:
             os.mkdir(name)
-            print("建立目录成功")
+            # print("建立目录成功")
+            logging.info("建立目录{0}成功".format(name))
 
         # 下载图片
         referer_headers = baby_url
@@ -182,16 +188,17 @@ def start_run():
             download_picture(onepicture, name, src, add_header)
             sleep(randint(1, 3) * SLEEP / 30)
         i += 1
-        print("已经下载完第 {0} 张专辑, baby是 {1} 的专辑图片".format(i, name))
-
-
-# print(randint(1, 10))
+        # print("已经下载完第 {0} 张专辑, baby是 {1} 的专辑图片".format(i, name))
+        logging.info("已经下载完第 {0} 张专辑, baby是 {1} 的专辑图片".format(i, name))
 
 
 if __name__ == "__main__":
+    logging.basicConfig(format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p', level=logging.INFO)
     while AFTER_PAGE < LASTE_PAGE:
-        print("第{0}页专辑下载开始".format(AFTER_PAGE))
+        logging.info("第{0}页专辑下载开始".format(AFTER_PAGE))
+        # print("第{0}页专辑下载开始".format(AFTER_PAGE))
         start_run()
-        print("第{0}页专辑下载完成".format(AFTER_PAGE))
+        logging.info("第{0}页专辑下载完成".format(AFTER_PAGE))
+        # print("第{0}页专辑下载完成".format(AFTER_PAGE))
         BEGIN_PAGE += 1
         AFTER_PAGE += 1
