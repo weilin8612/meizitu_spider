@@ -4,7 +4,7 @@
 import os
 import sys
 import logging
-
+import string
 p = os.path.dirname(os.path.dirname((os.path.abspath(__file__))))
 if p not in sys.path:
     sys.path.append(p)
@@ -101,7 +101,8 @@ def get_onebaby_name_pagemax(baby_url):
 
 
 def clean_dirname(dirname):
-    table = str.maketrans("/ ,.\b\t\\\'\"？", "xxxxxxxxxx")
+    # table = str.maketrans("/ ,.\b\t\\\'\"？", "xxxxxxxxxx")
+    table = str.maketrans(string.punctuation, 'x' * 32)
     result = dirname.translate(table)
     return result
 
